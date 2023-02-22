@@ -1,4 +1,4 @@
-#include "alx africa.h"
+#include "main.h"
 
 /**
  * main - Prints _putchar as a message.
