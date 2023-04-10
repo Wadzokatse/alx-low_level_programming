@@ -2,19 +2,19 @@
 
 /**
  * clear_bit - sets the value of a bit to 0 at a given index.
- * Return: integer (1 success, -1 error)
+ * Return: 1 if it worked, -1 if it didn't.
  */
-
 int clear_bit(unsigned long int *n, unsigned int index)
 {
-	unsigned long int sock;
+	unsigned int q;
 
-	if (index >= (sizeof(*n) * 8))
+	if (index > 63)
 		return (-1);
-	sock = 1;
-	sock = sock << index;
-	sockk = ~sock;
-	*n = *n & sock;
+
+	q = 1 << index;
+
+	if (*n & q)
+		*n ^= q;
 
 	return (1);
 }
