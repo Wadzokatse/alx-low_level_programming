@@ -1,65 +1,111 @@
-#include "main.h"
-#include <stdarg.h>
-
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
 /**
- * error_handler
- * @exit_code: exit code
+ * close_errchk - closes a file descriptor and prints
+ * @fd: file descriptor to close
+ * Return: 0 on success, -1 on failure
  */
-
-void error_handler(int exit_code, char *message, char type, ...)
+int close_errchk(int fd)
 {
-	va_list args;
+	int err;
 
-	va_start(args, type);
-	if (type == 's')
-		dprintf(STDERR_FILENO, message, va_arg(args, char *));
-	else if (type == 'd')
-		dprintf(STDERR_FILENO, message, va_arg(args, int));
-	else if (type == 'N')
-		dprintf(STDERR_FILENO, message, "");
-	else
-		dprintf(STDERR_FILENO, "Error: Does not match any type\n");
-	va_end(args);
-	exit(exit_code);
+	err = close(fd);
+	if (err == -1)
+	{
+		dprintf(STDERR_FILENO, "Error: Can't close fd %d\n", fd);
+		return (100);
+	}
+	return (0);
 }
 
 /**
- * main - copies the content of a file.
- * @argc: number of arguments
- * @argv: array of arguments
- * Return:  0 (Always)
+ * write_err - error handler for a write error
+ *
+ * @fd1: first file descriptor to close
+ * @fd2: second file descriptor to close
+ * @filename: filename prompting the error
+ *
+ * Return: 9
  */
-
-int main(int argc, char *argv[])
+int write_err(int fd1, int fd2, char *filename)
 {
-	char buffer[1024];
-	int al_s, al_d;
-	ssize_t bytes_read, bytes_written;
+	dprintf(STDERR_FILENO, "Error: Can't write to %s\n", filename);
+	close_errchk(fd1);
+	close_errchk(fd2);
+	return (9);
+}
 
-	if (argc != 3)
-		error_handler(97, "Usage: cp file_from file_to\n", 'N');
+/**
+ * read_err - error handler for a read error
+ *
+ * @fd1: first file descriptor to close
+ * @fd2: second file descriptor to close
+ * @filename: filename prompting the error
+ *
+ * Return: 8
+ */
+int read_err(int fd1, int fd2, char *filename)
+{
+	dprintf(STDERR_FILENO, "Error: Can't read from file %s\n", filename);
+	close_errchk(fd1);
+	close_errchk(fd2);
+	return (8);
+}
 
-	al_s = open(argv[1], O_RDONLY);
-	if (al_s == -1)
-		error_handler(98, "Error: Can't read from file %s\n", 's', argv[1]);
+/**
+ * main - copy one file to another, new file with perms 664
+ * usage - cp file_from file_to
+ *
+ * @ac: number of arg
+ * @av: list of args
+ *
+ * Return: 7 if incorrect num of args
+ * 8  if file_from does not exist or unreadable
+ * 9  if write fails
+ * 100 if file close fails
+ * 0 otherwise
+ */
+int main(int ac, char *av[])
+{
+	char buf[1024];
+	int lenr, lenw, file_from, file_to, err;
 
-	al_d = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC, 0664);
-	if (al_d == -1)
-		error_handler(99, "Error: Can't write to %s\n", 's', argv[2]);
-
-	while ((bytes_read = read(al_s, buffer, 1024)) > 0)
+	if (ac != 3)
 	{
-		bytes_written = write(al_d, buffer, bytes_read);
-		if (bytes_written == -1)
-			error_handler(99, "Error: Can't write to %s\n", 's', argv[2]);
+		dprintf(STDERR_FILENO, "Usage: cp file_from file_to\n");
+		return (7);
 	}
-
-	if (bytes_read == -1)
-		error_handler(98, "Error: Can't read from file %s\n", 's', argv[1]);
-	if (close(al_s) == -1)
-		error_handler(100, "Error: Can't close fd %d\n", 'd', al_s);
-	if (close(al_d) == -1)
-		error_handler(100, "Error: Can't close fd %d\n", 'd', al_d);
-
+	file_from = open(av[1], O_RDONLY);
+	if (file_from == -1)
+	{
+		dprintf(STDERR_FILENO, "Error: Can't read from file %s\n",
+			av[1]);
+		return (8);
+	}
+	file_to = open(av[2], O_WRONLY | O_CREAT | O_TRUNC,
+		       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+	if (file_to == -1)
+	{
+		dprintf(STDERR_FILENO, "Error: Can't write to %s\n", av[2]);
+		close_errchk(file_from);
+		return (9);
+	}
+	do {
+		lenr = read(file_from, buf, 1024);
+		if (lenr == -1)
+			return (read_err(file_from, file_to, av[1]));
+		lenw = write(file_to, buf, lenr);
+		if (lenw == -1 || lenw != lenr)
+			return (write_err(file_from, file_to, av[2]));
+	} while (lenr == 1024);
+	err = close_errchk(file_from);
+	err += close_errchk(file_to);
+	if (err != 0)
+		return (100);
 	return (0);
 }
