@@ -7,13 +7,13 @@
 #include <elf.h>
 
 /**
- * print_address
+ * print_addr - prints address
  * @ptr: magic.
  * Return: no return.
  */
 void print_addr(char *ptr)
 {
-	int q;
+	int i;
 	int begin;
 	char sys;
 
@@ -24,12 +24,12 @@ void print_addr(char *ptr)
 	{
 		begin = 26;
 		printf("80");
-		for (q = begin; q >= 22; q--)
+		for (i = begin; i >= 22; i--)
 		{
-			if (ptr[q] > 0)
-				printf("%x", ptr[q]);
-			else if (ptr[q] < 0)
-				printf("%x", 256 + ptr[q]);
+			if (ptr[i] > 0)
+				printf("%x", ptr[i]);
+			else if (ptr[i] < 0)
+				printf("%x", 256 + ptr[i]);
 		}
 		if (ptr[7] == 6)
 			printf("00");
@@ -38,13 +38,13 @@ void print_addr(char *ptr)
 	if (sys == '2')
 	{
 		begin = 26;
-		for (q = begin; q > 23; q--)
+		for (i = begin; i > 23; i--)
 		{
-			if (ptr[q] >= 0)
-				printf("%02x", ptr[q]);
+			if (ptr[i] >= 0)
+				printf("%02x", ptr[i]);
 
-			else if (ptr[q] < 0)
-				printf("%02x", 256 + ptr[q]);
+			else if (ptr[i] < 0)
+				printf("%02x", 256 + ptr[i]);
 
 		}
 	}
@@ -52,8 +52,8 @@ void print_addr(char *ptr)
 }
 
 /**
- * print_type
- * @ptr
+ * print_type - prints type
+ * @ptr: magic.
  * Return: no return.
  */
 void print_type(char *ptr)
@@ -81,8 +81,8 @@ void print_type(char *ptr)
 }
 
 /**
- * print_osabi 
- * @ptr
+ * print_osabi - prints osabi
+ * @ptr: magic.
  * Return: no return.
  */
 void print_osabi(char *ptr)
@@ -104,8 +104,8 @@ void print_osabi(char *ptr)
 
 
 /**
- * print_version
- * @ptr
+ * print_version - prints version
+ * @ptr: magic.
  * Return: no return.
  */
 void print_version(char *ptr)
@@ -120,8 +120,8 @@ void print_version(char *ptr)
 	printf("\n");
 }
 /**
- * print_data
- * @ptr
+ * print_data - prints data
+ * @ptr: magic.
  * Return: no return.
  */
 void print_data(char *ptr)
@@ -136,7 +136,7 @@ void print_data(char *ptr)
 		printf(", big endian\n");
 }
 /**
- * print_magic
+ * print_magic - prints magic info.
  * @ptr: magic.
  * Return: no return.
  */
@@ -154,7 +154,7 @@ void print_magic(char *ptr)
 }
 
 /**
- * check_sys
+ * check_sys - check the version system.
  * @ptr: magic.
  * Return: no return.
  */
@@ -182,7 +182,7 @@ void check_sys(char *ptr)
 }
 
 /**
- * check_elf
+ * check_elf - check if it is an elf file.
  * @ptr: magic.
  * Return: 1 if it is an elf file. 0 if not.
  */
@@ -200,14 +200,14 @@ int check_elf(char *ptr)
 }
 
 /**
- * main 
+ * main - check the code for Holberton School students.
  * @argc: number of arguments.
  * @argv: arguments vector.
  * Return: Always 0.
  */
 int main(int argc, char *argv[])
 {
-	int al, ret_read;
+	int fd, ret_read;
 	char ptr[27];
 
 	if (argc != 2)
@@ -216,15 +216,15 @@ int main(int argc, char *argv[])
 		exit(98);
 	}
 
-	al = open(argv[1], O_RDONLY);
+	fd = open(argv[1], O_RDONLY);
 
-	if (al < 0)
+	if (fd < 0)
 	{
 		dprintf(STDERR_FILENO, "Err: file can not be open\n");
 		exit(98);
 	}
 
-	lseek(al, 0, SEEK_SET);
+	lseek(fd, 0, SEEK_SET);
 	ret_read = read(fd, ptr, 27);
 
 	if (ret_read == -1)
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 	}
 
 	check_sys(ptr);
-	close(al);
+	close(fd);
 
 	return (0);
 }
